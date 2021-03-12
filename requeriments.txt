@@ -1,0 +1,4 @@
+Flask=1.1.2
+Flask-RESTful=0.3.8
+mysql-connector-python=8.0.22
+python-dotenv=0.15.0
