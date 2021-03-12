@@ -23,17 +23,17 @@ class DbConn():
             cursor = self.conDb.cursor(dictionary=True)
             cursor.execute(query)
             result = cursor.fetchall()
-            print(result)
+            count = cursor.rowcount
             cursor.close()
-            return {'error': 0, 'data': result}
+            return {'error': 0, 'data': result, 'count':count}
         except Exception as error:
             return {'error': 1, 'message': f"An error was generated when executing the query ({error})."}
 
-    def insert(self, insert):
+    def insert(self, insert, data_insert):
         """ Insert into DB """
         try:
             cursor = self.conDb.connection.cursor()
-            cursor.execute(str)
+            cursor.execute(insert, data_insert)
             cursor.connection.commit()
             cursor.close()
         except Exception as error:
