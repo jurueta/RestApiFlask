@@ -1,6 +1,7 @@
 import mysql.connector as connectDb
 import os
 import sys
+import json
 
 class DbConn():
 
@@ -15,26 +16,39 @@ class DbConn():
                 database = os.getenv("MYSQL_DB")
             )
         except Exception as error:
-            sys.exit("Error while connect to BD") 
+            raise(error)
 
-    def query(self, query: str):
+    def query(self, query: str, data: list=()):
         """ Make a query and obtain result """
         try:
             cursor = self.conDb.cursor(dictionary=True)
-            cursor.execute(query)
+            cursor.execute(query, data)
             result = cursor.fetchall()
             count = cursor.rowcount
             cursor.close()
             return {'error': 0, 'data': result, 'count':count}
         except Exception as error:
-            return {'error': 1, 'message': f"An error was generated when executing the query ({error})."}
+            raise(error)
 
-    def insert(self, insert, data_insert):
+    def insert(self, insert: str, data_insert: list=()):
         """ Insert into DB """
         try:
-            cursor = self.conDb.connection.cursor()
+            cursor = self.conDb.cursor()
             cursor.execute(insert, data_insert)
-            cursor.connection.commit()
+            self.conDb.commit()
+            id_insert = cursor.lastrowid
             cursor.close()
+            return {'error': 0, "id" : id_insert}
         except Exception as error:
-            return f"An error was generated when executing the insert ({error})."
+            raise(error)
+
+    def update(self, update: str, data_update: list=()):
+        try:
+            cursor = self.conDb.cursor()
+            cursor.execute(update, data_update)
+            self.conDb.commit()
+            count = cursor.rowcount
+            cursor.close()
+            return {'error': 0, 'count': count }
+        except Exception as error:
+            raise(error)
