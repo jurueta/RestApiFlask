@@ -1,6 +1,7 @@
 import mysql.connector as connectDb
 import os
 import sys
+import json
 
 class DbConn():
 
@@ -15,7 +16,7 @@ class DbConn():
                 database = os.getenv("MYSQL_DB")
             )
         except Exception as error:
-            raise("Error while connect to BD") 
+            raise(error)
 
     def query(self, query: str, data: list=()):
         """ Make a query and obtain result """
@@ -27,7 +28,7 @@ class DbConn():
             cursor.close()
             return {'error': 0, 'data': result, 'count':count}
         except Exception as error:
-            return {'error': 1, 'message': f"An error was generated when executing the query ({error})."}
+            raise(error)
 
     def insert(self, insert: str, data_insert: list=()):
         """ Insert into DB """
@@ -39,7 +40,7 @@ class DbConn():
             cursor.close()
             return {'error': 0, "id" : id_insert}
         except Exception as error:
-            return {'error': 1, 'message': f"An error was generated when executing the insert ({error})."}
+            raise(error)
 
     def update(self, update: str, data_update: list=()):
         try:
@@ -50,4 +51,4 @@ class DbConn():
             cursor.close()
             return {'error': 0, 'count': count }
         except Exception as error:
-            return {'error': 1, 'message': f"An error was generated when executing the update ({error})."}
+            raise(error)
