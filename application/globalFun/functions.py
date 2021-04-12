@@ -1,5 +1,6 @@
 import base64
 import io
+import os
 from PIL import Image
 from flask import current_app
 
@@ -13,3 +14,12 @@ def Base64ToFile(args):
         args["image"] = file_image
     else:
         return {'error': 'This file is not image'}, 400
+
+def pagination(page=None):
+    pagination = os.getenv("PAGINATION")
+    if page:
+        page_initial = int(pagination) * (int(page)-1)
+        print(f"pagination {page}")
+        return {'page_initial': page_initial, 'page_final': pagination}
+    else:
+        return {'page_initial': 0, 'page_final': pagination}

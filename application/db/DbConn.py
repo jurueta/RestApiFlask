@@ -1,6 +1,5 @@
 import mysql.connector as connectDb
 import os
-import sys
 import json
 
 class DbConn():

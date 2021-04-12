@@ -1,5 +1,5 @@
 from flask_restful import Resource, reqparse, inputs
-from flask import abort, request, make_response
+from flask import abort, request, make_response, current_app
 from db import DbConn
 from globalFun import functions
 
@@ -18,10 +18,16 @@ class Student(Resource):
             abort(500, f"Error connect with BD")
 
     def get(self, id_student=None):
+        
         condition = f"AND id = {id_student}" if id_student else ""
-        try:
 
-            data = self.dbconnect.query(f"SELECT {COLUM_DATA} WHERE status = 1 {condition} LIMIT 10")
+        consult_limit = functions.pagination(request.args.get("page"))
+
+        try:
+            data = self.dbconnect.query(f"SELECT {COLUM_DATA} WHERE status = 1 {condition} LIMIT {consult_limit['page_initial']}, {consult_limit['page_final']}")
+
+            for i in data['data']:
+                i["image"] = f"{request.host_url}{i['image']}" if i['image'] else None
 
             response = {'count':data['count'], 'data' : data['data']}
 
@@ -54,13 +60,10 @@ class Student(Resource):
             # Save Image in the server
             if args["image"]:
                 
-                transfer = tranfer = functions.Base64ToFile(args)
+                transfer = functions.Base64ToFile(args)
 
                 if transfer:
                     return transfer
-
-                else:
-                    return {'error': 'This file is not image'}, 400
 
             # Save colums and values in the DB
             colum = list(i for i, j in args.items() if j)
