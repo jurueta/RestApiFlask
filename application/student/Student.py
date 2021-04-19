@@ -21,15 +21,25 @@ class Student(Resource):
         
         condition = f"AND id = {id_student}" if id_student else ""
 
-        consult_limit = functions.pagination(request.args.get("page"))
-
         try:
-            data = self.dbconnect.query(f"SELECT {COLUM_DATA} WHERE status = 1 {condition} LIMIT {consult_limit['page_initial']}, {consult_limit['page_final']}")
+            data = self.dbconnect.query(f"SELECT COUNT(*) AS cuantity FROM {DB_TABLE} WHERE status = 1 {condition}")
+
+            initial_page, final_page, hasnext, hasprevius = functions.pagination(request.args.get("page"), data['data'][0]['cuantity'])
+
+            hasnext = {'next' :f"{request.base_url}?page={hasnext}"} if hasnext else {}
+
+            hasprevius = {'previus' :f"{request.base_url}?page={hasprevius}"} if hasprevius else {}
+
+            data = self.dbconnect.query(f"SELECT {COLUM_DATA} WHERE status = 1 {condition} LIMIT {initial_page}, {final_page}")
 
             for i in data['data']:
-                i["image"] = f"{request.host_url}{i['image']}" if i['image'] else None
+                i['image'] = f"{request.host_url}{i['image']}" if i['image'] else None
 
-            response = {'count':data['count'], 'data' : data['data']}
+            response = {'count':data['count']}
+
+            response.update(hasnext)
+            response.update(hasprevius)
+            response.update({'data' : data['data']})
 
             return response
         except Exception as error:

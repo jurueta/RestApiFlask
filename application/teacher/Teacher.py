@@ -20,9 +20,21 @@ class Teacher(Resource):
         condition = f"AND id = {id_teacher}" if id_teacher else ""
         try:
 
+            data = self.dbconnect.query(f"SELECT COUNT(*) AS cuantity FROM {DB_TABLE} WHERE status = 1 {condition}")
+
+            initial_page, final_page, hasnext, hasprevius = functions.pagination(request.args.get("page"), data['data'][0]['cuantity'])
+
+            hasnext = {'next' :f"{request.base_url}?page={hasnext}"} if hasnext else {}
+
+            hasprevius = {'previus' :f"{request.base_url}?page={hasprevius}"} if hasprevius else {}
+
             data = self.dbconnect.query(f"SELECT {COLUM_DATA} WHERE status = 1 {condition} LIMIT 10")
 
-            response = {'count':data['count'], 'data' : data['data']}
+            response = {'count':data['count']}
+
+            response.update(hasnext)
+            response.update(hasprevius)
+            response.update({'data' : data['data']})
 
             return response
         except Exception as error:

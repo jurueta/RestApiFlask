@@ -15,11 +15,19 @@ def Base64ToFile(args):
     else:
         return {'error': 'This file is not image'}, 400
 
-def pagination(page=None):
-    pagination = os.getenv("PAGINATION")
-    if page:
-        page_initial = int(pagination) * (int(page)-1)
-        print(f"pagination {page}")
-        return {'page_initial': page_initial, 'page_final': pagination}
+def pagination(page=None, cuantity_total=0):
+    pagination = int(os.getenv("PAGINATION"))
+    if page and page.isdigit() and int(page) > 0 :
+        page = int(page)
+        
+        page_initial = pagination * (page-1)
+
+        page_cuantity = cuantity_total / pagination
+        
+        next_page = page + 1 if page < page_cuantity and page > 0 else None
+
+        previus_page = page - 1 if page > 1 and page < page_cuantity else None
+        
+        return page_initial, pagination, next_page, previus_page
     else:
-        return {'page_initial': 0, 'page_final': pagination}
+        return 0, pagination, (None if cuantity_total < pagination else 2), None
