@@ -5,7 +5,7 @@ from globalFun import functions
 
 
 DB_TABLE = "student"
-COLUM_DATA = f"id, CONCAT(first_name, ' ', last_name) as name, age, phone, address, CONCAT(date_reg, '') as date, image FROM {DB_TABLE}"
+COLUM_DATA = f"id, identification, CONCAT(first_name, ' ', last_name) as name, age, phone, address, CONCAT(date_reg, '') as date, image FROM {DB_TABLE}"
 
 
 class Student(Resource):
@@ -24,16 +24,11 @@ class Student(Resource):
         try:
             data = self.dbconnect.query(f"SELECT COUNT(*) AS cuantity FROM {DB_TABLE} WHERE status = 1 {condition}")
 
-            initial_page, final_page, hasnext, hasprevius = functions.pagination(request.args.get("page"), data['data'][0]['cuantity'])
-
-            hasnext = {'next' :f"{request.base_url}?page={hasnext}"} if hasnext else {}
-
-            hasprevius = {'previus' :f"{request.base_url}?page={hasprevius}"} if hasprevius else {}
+            initial_page, final_page, hasnext, hasprevius = functions.pagination(request.args.get("page"), data['data'][0]['cuantity'], request.base_url)
 
             data = self.dbconnect.query(f"SELECT {COLUM_DATA} WHERE status = 1 {condition} LIMIT {initial_page}, {final_page}")
 
-            for i in data['data']:
-                i['image'] = f"{request.host_url}{i['image']}" if i['image'] else None
+            data['data'] = functions.format_url_image(data['data'], request.host_url)
 
             response = {'count':data['count']}
 
@@ -51,10 +46,10 @@ class Student(Resource):
         parser = reqparse.RequestParser()
 
         parser.add_argument('identification', type=str, required=True, help="identification valid is required")
-        parser.add_argument('first_name', type=inputs.regex('^[a-zA-z ]*$'), required=True, help="First name valid is required")
-        parser.add_argument('middle_name', type=inputs.regex('^[a-zA-z ]*$'))
-        parser.add_argument('last_name', type=inputs.regex('^[a-zA-z ]*$'), required=True, help="Last name valid is required")
-        parser.add_argument('second_surname', type=inputs.regex('^[a-zA-z ]*$'))
+        parser.add_argument('first_name', type=inputs.regex('^[a-zA-Z ]*$'), required=True, help="First name valid is required")
+        parser.add_argument('middle_name', type=inputs.regex('^[a-zA-Z ]*$'))
+        parser.add_argument('last_name', type=inputs.regex('^[a-zA-Z ]*$'), required=True, help="Last name valid is required")
+        parser.add_argument('second_surname', type=inputs.regex('^[a-zA-Z ]*$'))
         parser.add_argument('age', type=int, required=True, help="Age valid is required")
         parser.add_argument('phone', type=int, required=True, help="Phone valid is required")
         parser.add_argument('address', type=str, required=True, help="Address valid is required")
@@ -70,7 +65,7 @@ class Student(Resource):
             # Save Image in the server
             if args["image"]:
                 
-                transfer = functions.Base64ToFile(args)
+                transfer = functions.base64_to_file(args)
 
                 if transfer:
                     return transfer
@@ -83,6 +78,8 @@ class Student(Resource):
             data = self.dbconnect.insert(f"INSERT INTO {DB_TABLE} ({ ','.join(colum)}) VALUES({','.join(item)})", value)
 
             data = self.dbconnect.query(f"SELECT {COLUM_DATA} WHERE id = %s", (data["id"],))
+
+            data['data'] = functions.format_url_image(data['data'], request.host_url)
             
             return {'data' : data["data"]}
 
@@ -95,10 +92,10 @@ class Student(Resource):
         parser = reqparse.RequestParser()
 
         parser.add_argument('identification', type=str, help="identification valid is required")
-        parser.add_argument('first_name', type=inputs.regex('^[a-zA-z ]*$'), help="First name valid is required")
-        parser.add_argument('middle_name', type=inputs.regex('^[a-zA-z ]*$'))
-        parser.add_argument('last_name', type=inputs.regex('^[a-zA-z ]*$'), help="Last name valid is required")
-        parser.add_argument('second_surname', type=inputs.regex('^[a-zA-z ]*$'))
+        parser.add_argument('first_name', type=inputs.regex('^[a-zA-Z ]*$'), help="First name valid is required")
+        parser.add_argument('middle_name', type=inputs.regex('^[a-zA-Z ]*$'))
+        parser.add_argument('last_name', type=inputs.regex('^[a-zA-Z ]*$'), help="Last name valid is required")
+        parser.add_argument('second_surname', type=inputs.regex('^[a-zA-Z ]*$'))
         parser.add_argument('age', type=int, help="Age valid is required")
         parser.add_argument('phone', type=int, help="Phone valid is required", dest="phone_number",)
         parser.add_argument('address', type=str, help="Address valid is required")
@@ -112,9 +109,8 @@ class Student(Resource):
                 try:
                     # Save Image in the server
                     if args["image"]:
+                        transfer = functions.base64_to_file(args)
                         
-                        transfer = functions.Base64ToFile(args)
-
                         if transfer:
                             return transfer
 
@@ -125,6 +121,8 @@ class Student(Resource):
                     self.dbconnect.update(f"UPDATE {DB_TABLE} set {','.join(colum)} WHERE id = %s", value)
 
                     data = self.dbconnect.query(f"SELECT {COLUM_DATA} WHERE id = %s", (id_student,))
+
+                    data['data'] = functions.format_url_image(data['data'], request.host_url)
 
                     return {'data': data["data"]}
                 except Exception as error:

@@ -4,7 +4,7 @@ from db import DbConn
 from globalFun import functions
 
 DB_TABLE = "teacher"
-COLUM_DATA = f"id, CONCAT(first_name, ' ', last_name) as name, age, phone_number, address, CONCAT(date_reg, '') as date, image FROM {DB_TABLE}"
+COLUM_DATA = f"id, identification, CONCAT(first_name, ' ', last_name) as name, age, phone_number, address, CONCAT(date_reg, '') as date, image FROM {DB_TABLE}"
 
 class Teacher(Resource):
 
@@ -22,13 +22,11 @@ class Teacher(Resource):
 
             data = self.dbconnect.query(f"SELECT COUNT(*) AS cuantity FROM {DB_TABLE} WHERE status = 1 {condition}")
 
-            initial_page, final_page, hasnext, hasprevius = functions.pagination(request.args.get("page"), data['data'][0]['cuantity'])
-
-            hasnext = {'next' :f"{request.base_url}?page={hasnext}"} if hasnext else {}
-
-            hasprevius = {'previus' :f"{request.base_url}?page={hasprevius}"} if hasprevius else {}
+            initial_page, final_page, hasnext, hasprevius = functions.pagination(request.args.get("page"), data['data'][0]['cuantity'], request.base_url)
 
             data = self.dbconnect.query(f"SELECT {COLUM_DATA} WHERE status = 1 {condition} LIMIT 10")
+
+            data['data'] = functions.format_url_image(data['data'], request.host_url)
 
             response = {'count':data['count']}
 
@@ -66,7 +64,7 @@ class Teacher(Resource):
             # Save Image in the server
             if args["image"]:
                 
-                transfer = functions.Base64ToFile(args)
+                transfer = functions.base64_to_file(args)
 
                 if transfer:
                     return transfer
@@ -79,6 +77,8 @@ class Teacher(Resource):
             data = self.dbconnect.insert(f"INSERT INTO {DB_TABLE} ({ ','.join(colum)}) VALUES({','.join(item)})", value)
 
             data = self.dbconnect.query(f"SELECT {COLUM_DATA} WHERE id = %s", (data["id"],))
+
+            data['data'] = functions.format_url_image(data['data'], request.host_url)
             
             return {'data' : data["data"]}
 
@@ -110,7 +110,7 @@ class Teacher(Resource):
                     # Save Image in the server
                     if args["image"]:
                 
-                        transfer = functions.Base64ToFile(args)
+                        transfer = functions.base64_to_file(args)
 
                         if transfer:
                             return transfer
@@ -122,6 +122,8 @@ class Teacher(Resource):
                     self.dbconnect.update(f"UPDATE {DB_TABLE} set {','.join(colum)} WHERE id = %s", value)
 
                     data = self.dbconnect.query(f"SELECT {COLUM_DATA} WHERE id = %s", (id_teacher,))
+
+                    data['data'] = functions.format_url_image(data['data'], request.host_url)
 
                     return {'data': data["data"]}
                 except Exception as error:
